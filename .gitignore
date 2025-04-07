@@ -1,0 +1,35 @@
+# 依赖目录
+node_modules/
+
+# 文档
+doc.md
+
+# 编译后的输出
+dist/
+build/
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE配置
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 临时文件
+*.swp
+*.swo
+.tmp/
+temp/
