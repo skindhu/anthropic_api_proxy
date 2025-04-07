@@ -5,12 +5,16 @@ import logger from '../utils/logger';
 export const proxyRequest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // 提取路径和基本请求信息，用于日志记录
-    const path = req.path;
+    // 注意：req.path只会返回/messages部分，我们需要完整的路径，包括/v1前缀
+    const originalPath = req.path;
+    // 构建完整API路径 - 确保路径以/v1开头
+    const fullPath = `/v1${originalPath}`;
     const method = req.method;
     const hasApiKey = !!req.headers['x-api-key'];
 
-    logger.info(`处理API请求: ${method} ${path}`, {
-      path,
+    logger.info(`处理API请求: ${method} ${fullPath}`, {
+      originalPath,
+      fullPath,
       method,
       hasApiKey,
       hasAnthropicVersion: !!req.headers['anthropic-version'],
@@ -18,9 +22,9 @@ export const proxyRequest = async (req: Request, res: Response, next: NextFuncti
       bodySize: req.body ? JSON.stringify(req.body).length : 0
     });
 
-    // 调用Anthropic服务
+    // 调用Anthropic服务，传递完整路径
     const response = await anthropicService.proxyRequest(
-      path,
+      fullPath,
       method,
       req.headers,
       req.body
@@ -36,9 +40,10 @@ export const proxyRequest = async (req: Request, res: Response, next: NextFuncti
     // 将响应状态码设置为Anthropic API的状态码
     res.status(response.status);
 
-    logger.info(`成功代理请求: ${method} ${path}`, {
+    logger.info(`成功代理请求: ${method} ${fullPath}`, {
       status: response.status,
-      path,
+      originalPath,
+      fullPath,
       method
     });
 
@@ -52,6 +57,7 @@ export const proxyRequest = async (req: Request, res: Response, next: NextFuncti
       logger.warn(`Anthropic API返回错误状态码: ${status}`, {
         status,
         path: req.path,
+        fullPath: `/v1${req.path}`,
         method: req.method
       });
 
@@ -75,6 +81,7 @@ export const proxyRequest = async (req: Request, res: Response, next: NextFuncti
       // 对于网络错误等，记录详细错误并传递给错误处理中间件
       const errorDetails = {
         path: req.path,
+        fullPath: `/v1${req.path}`,
         method: req.method,
         errorName: error.name || '未知错误',
         errorMessage: error.message || '未提供错误消息',
@@ -88,6 +95,7 @@ export const proxyRequest = async (req: Request, res: Response, next: NextFuncti
       (enhancedError as any).originalError = error;
       (enhancedError as any).requestInfo = {
         path: req.path,
+        fullPath: `/v1${req.path}`,
         method: req.method
       };
 
